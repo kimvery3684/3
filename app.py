@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숨은 글자 찾기 (조절바 추가)", page_icon="🎚️", layout="wide")
+st.set_page_config(page_title="숨은 글자 찾기 (완벽조절)", page_icon="🎚️", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -68,7 +68,7 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     
     title_text = f"3초 안에 숫자 '{target_text}' 찾기"
     
-    # [핵심 수정] 상단 텍스트 위치 내리기 (Offset 적용)
+    # [핵심] 상단 텍스트 위치 내리기 (Offset 적용)
     header_text_offset = design['header_text_offset']
     
     try:
@@ -76,7 +76,7 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
         
-        # 기본 중앙값 + 사용자 오프셋(내리기)
+        # 중앙 기준 + 사용자 지정 위치(offset)
         y_pos = (header_h - text_h) / 2 + header_text_offset
         draw.text(((1080 - text_w) / 2, y_pos), title_text, font=font_title, fill=design['header_text'])
     except: pass
@@ -110,11 +110,10 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     bot_y = design['bot_y']
     bot_text = design['bottom_text']
     
-    # [핵심 수정] 줄간격(Spacing) 적용
+    # [핵심] 줄간격(Spacing) 적용
     line_spacing = design['bot_line_spacing']
     
     try:
-        # spacing 값을 draw.textbbox와 draw.text 모두에 확실하게 전달
         bbox_b = draw.textbbox((0, 0), bot_text, font=font_bottom, spacing=line_spacing)
         text_bw = bbox_b[2] - bbox_b[0]
         
@@ -124,7 +123,7 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
             font=font_bottom, 
             fill=design['bot_color'], 
             align="center", 
-            spacing=line_spacing # 줄간격 적용 파라미터
+            spacing=line_spacing # 줄간격 파라미터
         )
     except: pass
 
