@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숨은 글자 찾기 (간격조절)", page_icon="📏", layout="wide")
+st.set_page_config(page_title="숨은 글자 찾기 (디테일설정)", page_icon="📐", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -67,14 +67,21 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     draw.rectangle([(0, 0), (1080, header_h)], fill=design['header_bg'])
     
     title_text = f"3초 안에 숫자 '{target_text}' 찾기"
+    
+    # [NEW] 상단 텍스트 위치 조절 적용
+    header_text_offset = design['header_text_offset']
+    
     try:
         bbox = draw.textbbox((0, 0), title_text, font=font_title)
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
-        draw.text(((1080 - text_w) / 2, (header_h - text_h) / 2 - 10), title_text, font=font_title, fill=design['header_text'])
+        
+        # 중앙 기준 + 사용자가 설정한 오프셋만큼 이동
+        y_pos = (header_h - text_h) / 2 + header_text_offset
+        draw.text(((1080 - text_w) / 2, y_pos), title_text, font=font_title, fill=design['header_text'])
     except: pass
 
-    # 2. 그리드 배치 (핵심: 간격 및 위치 반영)
+    # 2. 그리드 배치
     start_x = design['grid_x']
     start_y = design['grid_y']
     spacing_x = design['spacing_x']
@@ -87,7 +94,6 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     
     for r in range(rows):
         for c in range(cols):
-            # 좌표 계산: 시작점 + (순서 * 간격)
             x = start_x + (c * spacing_x)
             y = start_y + (r * spacing_y)
             
@@ -96,7 +102,6 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
             
             draw.text((x, y), text, font=font_main, fill=design['text_color'], anchor="mm")
             
-            # 정답 박스
             if show_answer and is_target:
                 box_s = design['font_size'] * 0.7
                 draw.rectangle([x - box_s, y - box_s, x + box_s, y + box_s], outline="#FF0000", width=12)
@@ -104,10 +109,14 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     # 3. 하단 문구
     bot_y = design['bot_y']
     bot_text = design['bottom_text']
+    
+    # [NEW] 줄간격 적용
+    line_spacing = design['bot_line_spacing']
+    
     try:
-        bbox_b = draw.textbbox((0, 0), bot_text, font=font_bottom)
+        bbox_b = draw.textbbox((0, 0), bot_text, font=font_bottom, spacing=line_spacing)
         text_bw = bbox_b[2] - bbox_b[0]
-        draw.text(((1080 - text_bw) / 2, bot_y), bot_text, font=font_bottom, fill=design['bot_color'], align="center")
+        draw.text(((1080 - text_bw) / 2, bot_y), bot_text, font=font_bottom, fill=design['bot_color'], align="center", spacing=line_spacing)
     except: pass
 
     return canvas
@@ -138,24 +147,22 @@ def generate_youtube_metadata(base, target):
     return title, desc, tags
 
 # --- [6. 메인 UI] ---
-st.title("📏 숨은 글자 찾기 (간격/위치 정밀 조절)")
+st.title("📏 숨은 글자 찾기 (v4.5 디테일 조절)")
 
 with st.sidebar:
     st.header("🎨 디자인 & 배치 설정")
     
-    with st.expander("1. 색상 및 헤더", expanded=False):
-        bg_color = st.color_picker("배경색", "#FFFFFF")
-        text_color = st.color_picker("본문 글자색", "#000000")
-        header_bg = st.color_picker("헤더 배경", "#111827")
-        header_text = st.color_picker("헤더 글자", "#F3F4F6")
-        header_height = st.slider("헤더 높이 (파란 박스)", 100, 400, 250)
+    # [NEW] 상단 헤더 위치 조절 기능 추가
+    with st.expander("1. 상단 헤더 & 제목 위치", expanded=True):
+        header_height = st.slider("헤더 박스 높이", 100, 400, 250)
         title_size = st.slider("제목 글자 크기", 40, 120, 70)
+        header_text_offset = st.slider("글자 위치 이동 (위/아래)", -100, 100, 0, help="양수(+)면 아래로, 음수(-)면 위로 움직입니다.")
         
-    # [핵심 기능] 배치 및 간격 조절
-    with st.expander("2. 숫자판 배치 & 간격 (중요)", expanded=True):
-        st.info("💡 여기서 숫자들의 위치와 사이 간격을 조절하세요.")
-        
-        # 줄 수 설정
+        col_c1, col_c2 = st.columns(2)
+        header_bg = col_c1.color_picker("헤더 배경", "#111827")
+        header_text = col_c2.color_picker("헤더 글자", "#F3F4F6")
+
+    with st.expander("2. 숫자판 배치 & 간격", expanded=True):
         col_grid1, col_grid2 = st.columns(2)
         with col_grid1:
             rows = st.number_input("세로 줄 수", 5, 20, 10)
@@ -163,28 +170,28 @@ with st.sidebar:
             cols = st.number_input("가로 줄 수", 3, 15, 10)
             
         font_size = st.slider("숫자(글자) 크기", 30, 150, 65)
+        spacing_x = st.slider("가로 간격 (좌우)", 50, 200, 95)
+        spacing_y = st.slider("세로 간격 (상하)", 50, 200, 100)
+        grid_x = st.slider("시작 위치 X", 0, 500, 110)
+        grid_y = st.slider("시작 위치 Y", 100, 1200, 350)
         
-        st.divider()
-        st.caption("↔️↕️ 글자 사이 간격 조절")
-        spacing_x = st.slider("가로 간격 (옆 글자와의 거리)", 50, 200, 95)
-        spacing_y = st.slider("세로 간격 (위아래 거리)", 50, 200, 100)
-        
-        st.divider()
-        st.caption("📍 전체 위치 이동")
-        grid_x = st.slider("시작 위치 X (좌우 이동)", 0, 500, 110)
-        grid_y = st.slider("시작 위치 Y (상하 이동)", 100, 1200, 350, help="숫자판 전체를 위아래로 움직입니다.")
+        bg_color = st.color_picker("배경색", "#FFFFFF")
+        text_color = st.color_picker("숫자 글자색", "#000000")
     
-    with st.expander("3. 하단 문구 설정", expanded=True):
+    # [NEW] 하단 문구 줄간격 기능 추가
+    with st.expander("3. 하단 문구 & 줄간격", expanded=True):
         bottom_text = st.text_area("문구 내용", "정답을 찾으셨나요?\n댓글로 알려주세요! 👇")
         bot_size = st.slider("하단 글자 크기", 30, 150, 60)
-        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1200, 1900, 1650, help="아래로 내리려면 숫자를 키우세요.")
+        bot_line_spacing = st.slider("글자 줄간격 (행간)", 0, 100, 20, help="줄 사이를 넓히려면 숫자를 키우세요.")
+        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1200, 1900, 1650)
         bot_color = st.color_picker("하단 글자 색상", "#000000")
 
     design = {
         'bg_color': bg_color, 'text_color': text_color, 
         'header_bg': header_bg, 'header_text': header_text, 'header_height': header_height,
+        'header_text_offset': header_text_offset, # New
         'font_size': font_size, 'title_size': title_size, 
-        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color,
+        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color, 'bot_line_spacing': bot_line_spacing, # New
         'rows': rows, 'cols': cols, 'spacing_x': spacing_x, 'spacing_y': spacing_y,
         'grid_x': grid_x, 'grid_y': grid_y, 'bottom_text': bottom_text
     }
