@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숨은 글자 찾기 (디테일설정)", page_icon="📐", layout="wide")
+st.set_page_config(page_title="숨은 글자 찾기 (즉시수정Ver)", page_icon="⚡", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -68,7 +68,7 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     
     title_text = f"3초 안에 숫자 '{target_text}' 찾기"
     
-    # [NEW] 상단 텍스트 위치 조절 적용
+    # [수정됨] 상단 텍스트 위치: 중앙 + 오프셋(내리기) 적용
     header_text_offset = design['header_text_offset']
     
     try:
@@ -76,7 +76,7 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
         
-        # 중앙 기준 + 사용자가 설정한 오프셋만큼 이동
+        # 기본 중앙값 + 사용자 지정 오프셋
         y_pos = (header_h - text_h) / 2 + header_text_offset
         draw.text(((1080 - text_w) / 2, y_pos), title_text, font=font_title, fill=design['header_text'])
     except: pass
@@ -110,13 +110,23 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     bot_y = design['bot_y']
     bot_text = design['bottom_text']
     
-    # [NEW] 줄간격 적용
+    # [수정됨] 줄간격(spacing) 파라미터 강제 적용
     line_spacing = design['bot_line_spacing']
     
     try:
+        # spacing 값을 draw.textbbox와 draw.text 모두에 전달해야 함
         bbox_b = draw.textbbox((0, 0), bot_text, font=font_bottom, spacing=line_spacing)
         text_bw = bbox_b[2] - bbox_b[0]
-        draw.text(((1080 - text_bw) / 2, bot_y), bot_text, font=font_bottom, fill=design['bot_color'], align="center", spacing=line_spacing)
+        
+        # align="center"와 spacing 파라미터 동시 사용
+        draw.text(
+            ((1080 - text_bw) / 2, bot_y), 
+            bot_text, 
+            font=font_bottom, 
+            fill=design['bot_color'], 
+            align="center", 
+            spacing=line_spacing
+        )
     except: pass
 
     return canvas
@@ -147,16 +157,19 @@ def generate_youtube_metadata(base, target):
     return title, desc, tags
 
 # --- [6. 메인 UI] ---
-st.title("📏 숨은 글자 찾기 (v4.5 디테일 조절)")
+st.title("📏 숨은 글자 찾기 (v5.0 즉시적용)")
 
 with st.sidebar:
     st.header("🎨 디자인 & 배치 설정")
     
-    # [NEW] 상단 헤더 위치 조절 기능 추가
+    # [즉시 수정됨] 헤더 텍스트 오프셋 기본값을 30으로 설정 (내리기)
     with st.expander("1. 상단 헤더 & 제목 위치", expanded=True):
         header_height = st.slider("헤더 박스 높이", 100, 400, 250)
         title_size = st.slider("제목 글자 크기", 40, 120, 70)
-        header_text_offset = st.slider("글자 위치 이동 (위/아래)", -100, 100, 0, help="양수(+)면 아래로, 음수(-)면 위로 움직입니다.")
+        header_text_offset = st.slider(
+            "글자 위치 이동 (위/아래)", -100, 100, 30, # <-- 기본값 30 (아래로 내림)
+            help="양수(+)면 아래로, 음수(-)면 위로 움직입니다."
+        )
         
         col_c1, col_c2 = st.columns(2)
         header_bg = col_c1.color_picker("헤더 배경", "#111827")
@@ -178,20 +191,23 @@ with st.sidebar:
         bg_color = st.color_picker("배경색", "#FFFFFF")
         text_color = st.color_picker("숫자 글자색", "#000000")
     
-    # [NEW] 하단 문구 줄간격 기능 추가
+    # [즉시 수정됨] 하단 줄간격 기본값을 50으로 설정 (넓히기)
     with st.expander("3. 하단 문구 & 줄간격", expanded=True):
         bottom_text = st.text_area("문구 내용", "정답을 찾으셨나요?\n댓글로 알려주세요! 👇")
         bot_size = st.slider("하단 글자 크기", 30, 150, 60)
-        bot_line_spacing = st.slider("글자 줄간격 (행간)", 0, 100, 20, help="줄 사이를 넓히려면 숫자를 키우세요.")
+        bot_line_spacing = st.slider(
+            "글자 줄간격 (행간)", 0, 100, 50, # <-- 기본값 50 (넓게 벌림)
+            help="줄 사이를 넓히려면 숫자를 키우세요."
+        )
         bot_y = st.slider("하단 문구 위치 (Y좌표)", 1200, 1900, 1650)
         bot_color = st.color_picker("하단 글자 색상", "#000000")
 
     design = {
         'bg_color': bg_color, 'text_color': text_color, 
         'header_bg': header_bg, 'header_text': header_text, 'header_height': header_height,
-        'header_text_offset': header_text_offset, # New
+        'header_text_offset': header_text_offset,
         'font_size': font_size, 'title_size': title_size, 
-        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color, 'bot_line_spacing': bot_line_spacing, # New
+        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color, 'bot_line_spacing': bot_line_spacing,
         'rows': rows, 'cols': cols, 'spacing_x': spacing_x, 'spacing_y': spacing_y,
         'grid_x': grid_x, 'grid_y': grid_y, 'bottom_text': bottom_text
     }
