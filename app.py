@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숫자 퀴즈 생성기 (정밀제어)", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="숫자 퀴즈 생성기 (대본수정)", page_icon="🎯", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -43,69 +43,55 @@ if not os.path.exists(FONT_FILE):
 
 # --- [4. 이미지 생성 엔진] ---
 def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
-    # 캔버스 생성
     canvas = Image.new('RGB', (1080, 1920), d['bg_color'])
     draw = ImageDraw.Draw(canvas)
     
-    # 폰트 준비
     font_h1 = get_font(d['h1_size'])
     font_h2 = get_font(d['h2_size'])
     font_main = get_font(d['main_size'])
     font_bot = get_font(d['bot_size'])
 
-    # --- [섹션 1: 상단 헤더 박스 & 2줄 텍스트] ---
-    # 1. 파란 배경 박스 그리기
+    # [섹션 1: 상단 헤더]
     draw.rectangle([(0, 0), (1080, d['header_height'])], fill=d['header_bg'])
     
-    # 2. 첫 번째 줄 (큰 제목: 숫자 찾기 도전)
     h1_text = d['h1_text']
     try:
         bbox1 = draw.textbbox((0, 0), h1_text, font=font_h1)
-        w1, h1 = bbox1[2] - bbox1[0], bbox1[3] - bbox1[1]
-        # 위치: 중앙 정렬, 사용자가 지정한 Y 위치
+        w1 = bbox1[2] - bbox1[0]
         draw.text(((1080 - w1) / 2, d['h1_y']), h1_text, font=font_h1, fill=d['h1_color'])
     except: pass
 
-    # 3. 두 번째 줄 (작은 제목: 3초 안에...)
-    # {target}을 실제 숫자로 치환
     h2_text = d['h2_text'].replace("{target}", target).replace("{base}", base)
     try:
         bbox2 = draw.textbbox((0, 0), h2_text, font=font_h2)
-        w2, h2 = bbox2[2] - bbox2[0], bbox2[3] - bbox2[1]
-        # 위치: 중앙 정렬, 사용자가 지정한 Y 위치
+        w2 = bbox2[2] - bbox2[0]
         draw.text(((1080 - w2) / 2, d['h2_y']), h2_text, font=font_h2, fill=d['h2_color'])
     except: pass
 
-    # --- [섹션 2: 중앙 숫자 그리드] ---
-    # 정답 위치 랜덤 생성 (없으면 생성)
+    # [섹션 2: 중앙 숫자 그리드]
     if 'answer_pos' not in st.session_state:
         st.session_state.answer_pos = (random.randint(0, rows-1), random.randint(0, cols-1))
     ans_r, ans_c = st.session_state.answer_pos
 
     for r in range(rows):
         for c in range(cols):
-            # 좌표 계산: 시작점 + (순서 * 간격)
             x = d['grid_start_x'] + (c * d['spacing_x'])
             y = d['grid_start_y'] + (r * d['spacing_y'])
             
             is_target = (r == ans_r and c == ans_c)
             text_content = target if is_target else base
             
-            # 숫자 그리기
             draw.text((x, y), text_content, font=font_main, fill=d['main_color'], anchor="mm")
             
-            # 정답 박스 (정답 보기 모드일 때만)
             if show_answer and is_target:
                 box_s = d['main_size'] * 0.75
                 draw.rectangle([x - box_s, y - box_s, x + box_s, y + box_s], outline="#FF0000", width=10)
 
-    # --- [섹션 3: 하단 문구] ---
+    # [섹션 3: 하단 문구]
     bot_text = d['bot_text']
     try:
-        # 줄간격(spacing) 적용
         bbox_b = draw.textbbox((0, 0), bot_text, font=font_bot, spacing=d['bot_spacing'])
         wb = bbox_b[2] - bbox_b[0]
-        
         draw.text(
             ((1080 - wb) / 2, d['bot_y']), 
             bot_text, 
@@ -118,31 +104,28 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
 
     return canvas
 
-# --- [5. 유튜브 메타데이터 생성] ---
+# --- [5. 유튜브 메타데이터 생성 (수정됨)] ---
 def generate_metadata(base, target):
-    title = f"전세계 1%만 통과! 3초 안에 숫자 '{target}' 찾기 ⏱️ #shorts"
-    desc = f"""당신의 눈썰미를 테스트해보세요!
-수많은 '{base}' 속에 숨어있는 '{target}'을 3초 안에 찾으면 천재!
-
-👇 정답을 찾으셨다면 '구독'과 '좋아요' 부탁드려요! 👇
-
-#두뇌퀴즈 #시력테스트 #틀린그림찾기 #치매예방 #{target}
-"""
-    tags = f"두뇌퀴즈, 시력테스트, 집중력, 치매예방, 숫자퀴즈, {base}, {target}, 뇌훈련"
+    title = f"3초 안에 숫자 '{target}' 찾기 도전! ⏱️ #shorts"
+    
+    # [요청하신 대본 내용으로 정확히 수정]
+    desc = f"3초안에 숫자 [{target}]를 찾으면 정답을 톡톡 두번 터치해주세요\n\n#두뇌퀴즈 #시력테스트 #shorts"
+    
+    tags = f"두뇌퀴즈, 시력테스트, 집중력, 치매예방, 숫자퀴즈, {base}, {target}, 뇌훈련, shorts"
     return title, desc, tags
 
 # --- [6. 메인 컨트롤 패널 (UI)] ---
-st.title("🎯 숫자 퀴즈 생성기 (디자인 정밀제어)")
+st.title("🎯 숫자 퀴즈 생성기 (대본 수정완료)")
 
 # === [사이드바 컨트롤] ===
 with st.sidebar:
     st.header("🎚️ 디자인 설정 패널")
     
-    # 1. 상단 헤더 (빨간 박스 윗부분)
+    # 1. 상단 헤더
     with st.expander("1. 상단 제목 (2줄 설정)", expanded=True):
         st.markdown("### 🟦 헤더 박스")
         header_height = st.slider("헤더 높이", 100, 600, 350)
-        header_bg = st.color_picker("헤더 배경색", "#112D4E") # 남색
+        header_bg = st.color_picker("헤더 배경색", "#112D4E")
         
         st.markdown("### 📝 첫 번째 줄 (큰 제목)")
         h1_text = st.text_input("내용 1", "숫자 찾기 도전")
@@ -155,9 +138,9 @@ with st.sidebar:
         st.caption("'{target}'은 찾는 숫자로 자동 변환됩니다.")
         h2_size = st.slider("글자 크기 2", 40, 150, 80)
         h2_y = st.slider("위치 Y (2)", 50, 500, 180)
-        h2_color = st.color_picker("글자 색 2", "#FFC300") # 노란색
+        h2_color = st.color_picker("글자 색 2", "#FFC300")
 
-    # 2. 중앙 그리드 (숫자판)
+    # 2. 중앙 그리드
     with st.expander("2. 숫자판 배치 & 간격", expanded=True):
         col_r, col_c = st.columns(2)
         rows = col_r.number_input("세로 줄 수", 5, 20, 10)
@@ -183,7 +166,6 @@ with st.sidebar:
         
     bg_color = st.color_picker("전체 배경색", "#FFFFFF")
 
-    # 디자인 딕셔너리 패킹
     design = {
         'bg_color': bg_color, 'header_height': header_height, 'header_bg': header_bg,
         'h1_text': h1_text, 'h1_size': h1_size, 'h1_y': h1_y, 'h1_color': h1_color,
@@ -229,7 +211,8 @@ with c2:
             st.download_button("💾 정답 다운로드", buf.getvalue(), "answer.jpg", "image/jpeg", use_container_width=True)
             
         st.divider()
+        # [수정됨] 변경된 메타데이터 생성 함수 호출
         t, d, tags = generate_metadata(base_text, target_text)
         st.text_input("유튜브 제목", t)
-        st.text_area("설명란", d)
+        st.text_area("설명란 (대본)", d, height=150) # 높이 조절
         st.text_area("태그", tags)
