@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숨은 글자 찾기 (100만뷰 ver)", page_icon="🔥", layout="wide")
+st.set_page_config(page_title="숨은 글자 찾기 (위치조절)", page_icon="📐", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -62,8 +62,8 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     font_title = get_font(design['title_size'])
     font_bottom = get_font(design['bot_size'])
     
-    # 1. 상단 헤더
-    header_h = 250
+    # 1. 상단 헤더 (높이 조절 반영)
+    header_h = design['header_height'] # 사용자 설정 높이
     draw.rectangle([(0, 0), (1080, header_h)], fill=design['header_bg'])
     
     title_text = f"3초 안에 숫자 '{target_text}' 찾기"
@@ -71,7 +71,8 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
         bbox = draw.textbbox((0, 0), title_text, font=font_title)
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
-        draw.text(((1080 - text_w) / 2, (header_h - text_h) / 2 - 20), title_text, font=font_title, fill=design['header_text'])
+        # 헤더 정중앙에 텍스트 배치
+        draw.text(((1080 - text_w) / 2, (header_h - text_h) / 2 - 10), title_text, font=font_title, fill=design['header_text'])
     except: pass
 
     # 2. 그리드 배치
@@ -98,10 +99,9 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
             # 정답 박스
             if show_answer and is_target:
                 box_s = design['font_size'] * 0.7
-                # 박스를 조금 더 두껍고 잘 보이게
                 draw.rectangle([x - box_s, y - box_s, x + box_s, y + box_s], outline="#FF0000", width=12)
 
-    # 3. 하단 문구
+    # 3. 하단 문구 (위치 조절 반영)
     bot_y = design['bot_y']
     bot_text = design['bottom_text']
     try:
@@ -112,9 +112,8 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
 
     return canvas
 
-# --- [5. 트래픽 폭발용 메타데이터 생성 (알고리즘 최적화)] ---
+# --- [5. 메타데이터 생성] ---
 def generate_youtube_metadata(base, target):
-    # 클릭률(CTR) 극대화 제목
     titles = [
         f"전세계 상위 1%만 가능! 3초 안에 {target} 찾기 👁️",
         f"※치매예방 테스트※ {base} 사이에 숨은 {target} 찾으면 뇌나이 20대?",
@@ -124,7 +123,6 @@ def generate_youtube_metadata(base, target):
     ]
     title = random.choice(titles)
     
-    # 체류 시간 & 댓글 유도 설명
     desc = f"""당신의 뇌는 안녕하십니까? 🧠
 하루 1분 두뇌 트레이닝으로 치매를 예방하세요!
 
@@ -136,13 +134,11 @@ def generate_youtube_metadata(base, target):
 
 #두뇌퀴즈 #시력테스트 #집중력 #치매예방 #틀린그림찾기 #{base} #{target} #뇌훈련
 """
-    # 검색량 높은 키워드 조합
     tags = f"두뇌회전, 두뇌퀴즈, 시력테스트, 틀린그림찾기, 집중력향상, 치매예방, 숫자퀴즈, 뇌풀기, shorts, 쇼츠, {base}, {target}, 뇌훈련, 아이큐테스트, 관찰력"
-    
     return title, desc, tags
 
 # --- [6. 메인 UI] ---
-st.title("🔥 숨은 글자 찾기 생성기 (100만뷰 Ver)")
+st.title("🔥 숨은 글자 찾기 생성기 (위치 자유 조절)")
 
 with st.sidebar:
     st.header("🎨 디자인 설정")
@@ -150,31 +146,36 @@ with st.sidebar:
     with st.expander("1. 색상 설정", expanded=False):
         bg_color = st.color_picker("배경색", "#FFFFFF")
         text_color = st.color_picker("본문 글자색", "#000000")
-        header_bg = st.color_picker("헤더 배경", "#111827") # 다크 네이비 (전문적인 느낌)
+        header_bg = st.color_picker("헤더 배경", "#111827")
         header_text = st.color_picker("헤더 글자", "#F3F4F6")
-        
-    with st.expander("2. 그리드 배치 (기본 10줄)", expanded=True):
-        st.info("💡 10x10 배치가 가장 인기 있습니다.")
-        rows = st.slider("세로 줄 수 (Rows)", 5, 20, 10) # 10줄 기본
-        cols = st.slider("가로 줄 수 (Cols)", 3, 15, 10) # 10줄 기본
-        font_size = st.slider("본문 글자 크기", 30, 150, 65) # 글자 크기 약간 줄임
-        spacing_x = st.slider("가로 간격", 50, 200, 95) # 간격 좁힘
-        spacing_y = st.slider("세로 간격", 50, 200, 100) # 간격 좁힘
-        grid_x = st.slider("시작 위치 X", 10, 500, 110)
-        grid_y = st.slider("시작 위치 Y", 200, 800, 350)
     
-    with st.expander("3. 하단 문구 & 여백", expanded=False):
+    # [NEW] 상단 헤더 설정 추가
+    with st.expander("2. 상단 헤더(제목) 설정", expanded=True):
+        header_height = st.slider("헤더 높이 (파란 박스 크기)", 100, 500, 250, help="상단 바의 두께를 조절합니다.")
+        title_size = st.slider("제목 글자 크기", 40, 120, 70)
+        
+    with st.expander("3. 그리드 배치 (10x10)", expanded=True):
+        st.info("💡 10줄 꽉 찬 화면이 기본입니다.")
+        rows = st.slider("세로 줄 수", 5, 20, 10)
+        cols = st.slider("가로 줄 수", 3, 15, 10)
+        font_size = st.slider("숫자 크기", 30, 150, 65)
+        spacing_x = st.slider("가로 간격", 50, 200, 95)
+        spacing_y = st.slider("세로 간격", 50, 200, 100)
+        grid_x = st.slider("시작 위치 X (좌우)", 10, 500, 110)
+        grid_y = st.slider("시작 위치 Y (상하)", 200, 1000, 350, help="숫자판 전체를 위아래로 움직입니다.")
+    
+    # [NEW] 하단 문구 설정 강화
+    with st.expander("4. 하단 문구 & 위치", expanded=True):
         bottom_text = st.text_area("문구 내용", "정답을 찾으셨나요?\n댓글로 알려주세요! 👇")
         bot_size = st.slider("하단 글자 크기", 30, 150, 60)
-        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1000, 1900, 1650)
+        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1000, 1900, 1650, help="숫자가 클수록 화면 아래쪽으로 내려갑니다.")
         bot_color = st.color_picker("하단 글자 색상", "#000000")
-    
-    title_size = 70
 
     design = {
         'bg_color': bg_color, 'text_color': text_color, 
         'header_bg': header_bg, 'header_text': header_text,
         'font_size': font_size, 'title_size': title_size, 
+        'header_height': header_height, # New
         'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color,
         'rows': rows, 'cols': cols, 'spacing_x': spacing_x, 'spacing_y': spacing_y,
         'grid_x': grid_x, 'grid_y': grid_y, 'bottom_text': bottom_text
@@ -203,29 +204,26 @@ with c2:
     if st.session_state.get('generated', False):
         st.subheader("2. 결과물 확인")
         
-        tab_q, tab_a = st.tabs(["❓ 문제 이미지 (영상용)", "✅ 정답 이미지 (썸네일용)"])
+        tab_q, tab_a = st.tabs(["❓ 문제 이미지", "✅ 정답 이미지"])
         
-        # 문제 이미지 생성
         img_q = create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=False)
-        # 정답 이미지 생성
         img_a = create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=True)
         
         with tab_q:
             st.image(img_q, caption="문제 화면", use_container_width=True)
             buf_q = BytesIO()
             img_q.save(buf_q, format="JPEG", quality=100)
-            st.download_button("💾 문제 이미지 다운로드", buf_q.getvalue(), "quiz_question.jpg", "image/jpeg", use_container_width=True)
+            st.download_button("💾 문제 다운로드", buf_q.getvalue(), "quiz_question.jpg", "image/jpeg", use_container_width=True)
             
         with tab_a:
-            st.image(img_a, caption="정답 화면 (빨간 박스)", use_container_width=True)
+            st.image(img_a, caption="정답 화면", use_container_width=True)
             buf_a = BytesIO()
             img_a.save(buf_a, format="JPEG", quality=100)
-            st.download_button("💾 정답 이미지 다운로드", buf_a.getvalue(), "quiz_answer.jpg", "image/jpeg", use_container_width=True)
+            st.download_button("💾 정답 다운로드", buf_a.getvalue(), "quiz_answer.jpg", "image/jpeg", use_container_width=True)
 
         st.divider()
-        st.markdown("### 🔥 유튜브 업로드 메타데이터 (100만뷰 최적화)")
+        st.markdown("### 🔥 유튜브 업로드 메타데이터")
         title, desc, tags = generate_youtube_metadata(base_text, target_text)
-        
         st.text_input("📌 제목", value=title)
         st.text_area("📝 설명", value=desc, height=250)
         st.text_area("🏷️ 태그", value=tags, height=100)
