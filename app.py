@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숨은 글자 찾기 (여백조절)", page_icon="👀", layout="wide")
+st.set_page_config(page_title="숨은 글자 찾기 (100만뷰 ver)", page_icon="🔥", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -39,6 +39,7 @@ PRESET_PAIRS = {
     "6 vs 9 (숫자)": ("6", "9"),
     "3 vs 8 (숫자)": ("3", "8"),
     "1 vs 7 (숫자)": ("1", "7"),
+    "0 vs 8 (숫자)": ("0", "8"),
     "O vs Q (영어)": ("O", "Q"),
     "F vs E (영어)": ("F", "E"),
     "R vs P (영어)": ("R", "P"),
@@ -54,16 +55,14 @@ def get_font(size):
         return ImageFont.load_default()
 
 def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=False):
-    # 캔버스 생성
     canvas = Image.new('RGB', (1080, 1920), design['bg_color'])
     draw = ImageDraw.Draw(canvas)
     
-    # 폰트 로드
     font_main = get_font(design['font_size'])
     font_title = get_font(design['title_size'])
     font_bottom = get_font(design['bot_size'])
     
-    # 1. 상단 제목 (헤더 바 포함)
+    # 1. 상단 헤더
     header_h = 250
     draw.rectangle([(0, 0), (1080, header_h)], fill=design['header_bg'])
     
@@ -81,7 +80,6 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     spacing_x = design['spacing_x']
     spacing_y = design['spacing_y']
     
-    # 정답 위치 랜덤 선정 (session_state에 없으면 새로 생성)
     if 'answer_pos' not in st.session_state:
         st.session_state.answer_pos = (random.randint(0, rows-1), random.randint(0, cols-1))
     
@@ -92,83 +90,83 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
             x = start_x + (c * spacing_x)
             y = start_y + (r * spacing_y)
             
-            # 정답 위치면 타겟 텍스트, 아니면 베이스 텍스트
             is_target = (r == ans_r and c == ans_c)
             text = target_text if is_target else base_text
-            color = design['text_color']
             
-            # 텍스트 그리기
-            draw.text((x, y), text, font=font_main, fill=color, anchor="mm")
+            draw.text((x, y), text, font=font_main, fill=design['text_color'], anchor="mm")
             
-            # 정답 공개 모드일 때 빨간 박스 표시
+            # 정답 박스
             if show_answer and is_target:
-                # 박스 크기 계산 (글자 크기 기반)
-                box_s = design['font_size'] * 0.8
-                draw.rectangle([x - box_s, y - box_s, x + box_s, y + box_s], outline="#FF0000", width=10)
+                box_s = design['font_size'] * 0.7
+                # 박스를 조금 더 두껍고 잘 보이게
+                draw.rectangle([x - box_s, y - box_s, x + box_s, y + box_s], outline="#FF0000", width=12)
 
-    # 3. 하단 문구 (위치 및 여백 조절 기능 적용)
-    bot_y = design['bot_y'] # 사용자 지정 Y좌표
+    # 3. 하단 문구
+    bot_y = design['bot_y']
     bot_text = design['bottom_text']
     try:
         bbox_b = draw.textbbox((0, 0), bot_text, font=font_bottom)
         text_bw = bbox_b[2] - bbox_b[0]
-        # 중앙 정렬하여 그리기
         draw.text(((1080 - text_bw) / 2, bot_y), bot_text, font=font_bottom, fill=design['bot_color'], align="center")
     except: pass
 
     return canvas
 
-# --- [5. 유튜브 메타데이터 생성] ---
+# --- [5. 트래픽 폭발용 메타데이터 생성 (알고리즘 최적화)] ---
 def generate_youtube_metadata(base, target):
+    # 클릭률(CTR) 극대화 제목
     titles = [
-        f"뇌지컬 테스트! 3초 안에 {target} 찾으면 천재? 🧠",
-        f"99%가 틀리는 문제! {base} 사이에 숨은 {target} 찾기",
-        f"눈 좋은 사람만 보입니다. {target} 찾기 도전! #shorts",
-        f"치매 예방 퀴즈! {target} 찾으면 뇌 나이 20대",
-        f"집중력 테스트 🧐 3초 안에 다른 글자를 찾아보세요!"
+        f"전세계 상위 1%만 가능! 3초 안에 {target} 찾기 👁️",
+        f"※치매예방 테스트※ {base} 사이에 숨은 {target} 찾으면 뇌나이 20대?",
+        f"절대 못 찾음ㅋㅋㅋ 3초 컷 가능하신 분? ({target} 찾기)",
+        f"눈 좋은 사람만 보입니다. 5초 안에 {target} 찾아보세요! #shorts",
+        f"몽골인 시력 테스트 🦅 {base} 속 다른 글자 찾기 (난이도 최상)"
     ]
     title = random.choice(titles)
     
-    desc = f"""집중력 최고수만 통과한다는 그 문제!
-3초 안에 '{target}'을 찾아보세요! 👀
+    # 체류 시간 & 댓글 유도 설명
+    desc = f"""당신의 뇌는 안녕하십니까? 🧠
+하루 1분 두뇌 트레이닝으로 치매를 예방하세요!
 
-👇 정답을 찾으셨다면 댓글로 '찾았다' 라고 남겨주세요! 👇
+3초 안에 '{target}'을 찾으셨다면?
+당신은 상위 1% 눈썰미의 소유자입니다! 🦅
+
+👇 **정답을 찾으신 분은 댓글로 '성공'이라고 남겨주세요!** 👇
 (화면을 두 번 터치하면 눈이 맑아집니다 ✨)
 
-#두뇌퀴즈 #시력테스트 #집중력 #치매예방 #틀린그림찾기 #{base} #{target}
+#두뇌퀴즈 #시력테스트 #집중력 #치매예방 #틀린그림찾기 #{base} #{target} #뇌훈련
 """
-    tags = f"두뇌회전, 두뇌퀴즈, 시력테스트, 틀린그림찾기, 집중력향상, 치매예방, 숫자퀴즈, 뇌풀기, shorts, 쇼츠, {base}, {target}"
+    # 검색량 높은 키워드 조합
+    tags = f"두뇌회전, 두뇌퀴즈, 시력테스트, 틀린그림찾기, 집중력향상, 치매예방, 숫자퀴즈, 뇌풀기, shorts, 쇼츠, {base}, {target}, 뇌훈련, 아이큐테스트, 관찰력"
     
     return title, desc, tags
 
 # --- [6. 메인 UI] ---
-st.title("👀 숨은 글자 찾기 생성기 (v2.0)")
+st.title("🔥 숨은 글자 찾기 생성기 (100만뷰 Ver)")
 
-# 사이드바 설정
 with st.sidebar:
     st.header("🎨 디자인 설정")
     
     with st.expander("1. 색상 설정", expanded=False):
         bg_color = st.color_picker("배경색", "#FFFFFF")
         text_color = st.color_picker("본문 글자색", "#000000")
-        header_bg = st.color_picker("헤더 배경", "#1E3A8A")
-        header_text = st.color_picker("헤더 글자", "#FFFFFF")
+        header_bg = st.color_picker("헤더 배경", "#111827") # 다크 네이비 (전문적인 느낌)
+        header_text = st.color_picker("헤더 글자", "#F3F4F6")
         
-    with st.expander("2. 그리드(본문) 배치", expanded=False):
-        rows = st.slider("세로 줄 수 (Rows)", 5, 15, 10)
-        cols = st.slider("가로 줄 수 (Cols)", 3, 10, 6)
-        font_size = st.slider("본문 글자 크기", 30, 150, 80)
-        spacing_x = st.slider("가로 간격", 50, 200, 140)
-        spacing_y = st.slider("세로 간격", 50, 200, 120)
-        grid_x = st.slider("시작 위치 X", 50, 500, 180)
-        grid_y = st.slider("시작 위치 Y", 200, 800, 400)
+    with st.expander("2. 그리드 배치 (기본 10줄)", expanded=True):
+        st.info("💡 10x10 배치가 가장 인기 있습니다.")
+        rows = st.slider("세로 줄 수 (Rows)", 5, 20, 10) # 10줄 기본
+        cols = st.slider("가로 줄 수 (Cols)", 3, 15, 10) # 10줄 기본
+        font_size = st.slider("본문 글자 크기", 30, 150, 65) # 글자 크기 약간 줄임
+        spacing_x = st.slider("가로 간격", 50, 200, 95) # 간격 좁힘
+        spacing_y = st.slider("세로 간격", 50, 200, 100) # 간격 좁힘
+        grid_x = st.slider("시작 위치 X", 10, 500, 110)
+        grid_y = st.slider("시작 위치 Y", 200, 800, 350)
     
-    # [NEW] 하단 문구 및 여백 설정
-    with st.expander("3. 하단 문구 & 여백 (New)", expanded=True):
-        st.info("여기서 하단 글자의 위치와 크기를 조절하세요.")
-        bottom_text = st.text_area("문구 내용", "정답은 댓글에서 확인하세요!\n구독과 좋아요는 사랑입니다 ❤️")
+    with st.expander("3. 하단 문구 & 여백", expanded=False):
+        bottom_text = st.text_area("문구 내용", "정답을 찾으셨나요?\n댓글로 알려주세요! 👇")
         bot_size = st.slider("하단 글자 크기", 30, 150, 60)
-        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1000, 1900, 1600, help="숫자가 클수록 아래로 내려갑니다.")
+        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1000, 1900, 1650)
         bot_color = st.color_picker("하단 글자 색상", "#000000")
     
     title_size = 70
@@ -177,12 +175,11 @@ with st.sidebar:
         'bg_color': bg_color, 'text_color': text_color, 
         'header_bg': header_bg, 'header_text': header_text,
         'font_size': font_size, 'title_size': title_size, 
-        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color, # New variables
+        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color,
         'rows': rows, 'cols': cols, 'spacing_x': spacing_x, 'spacing_y': spacing_y,
         'grid_x': grid_x, 'grid_y': grid_y, 'bottom_text': bottom_text
     }
 
-# 메인 화면
 c1, c2 = st.columns([1, 1.5])
 
 with c1:
@@ -198,7 +195,6 @@ with c1:
         st.info(f"선택: '{base_text}' 중에서 '{target_text}' 찾기")
 
     if st.button("🚀 퀴즈 이미지 생성", type="primary"):
-        # 정답 위치 리셋 (새로운 랜덤 위치)
         st.session_state.answer_pos = (random.randint(0, rows-1), random.randint(0, cols-1))
         st.session_state.generated = True
         st.rerun()
@@ -227,11 +223,11 @@ with c2:
             st.download_button("💾 정답 이미지 다운로드", buf_a.getvalue(), "quiz_answer.jpg", "image/jpeg", use_container_width=True)
 
         st.divider()
-        st.markdown("### 🔥 유튜브 업로드 메타데이터")
+        st.markdown("### 🔥 유튜브 업로드 메타데이터 (100만뷰 최적화)")
         title, desc, tags = generate_youtube_metadata(base_text, target_text)
         
         st.text_input("📌 제목", value=title)
-        st.text_area("📝 설명", value=desc, height=200)
+        st.text_area("📝 설명", value=desc, height=250)
         st.text_area("🏷️ 태그", value=tags, height=100)
 
     else:
