@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숨은 글자 찾기 (즉시수정Ver)", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="숨은 글자 찾기 (조절바 추가)", page_icon="🎚️", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -68,7 +68,7 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     
     title_text = f"3초 안에 숫자 '{target_text}' 찾기"
     
-    # [수정됨] 상단 텍스트 위치: 중앙 + 오프셋(내리기) 적용
+    # [핵심 수정] 상단 텍스트 위치 내리기 (Offset 적용)
     header_text_offset = design['header_text_offset']
     
     try:
@@ -76,7 +76,7 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
         
-        # 기본 중앙값 + 사용자 지정 오프셋
+        # 기본 중앙값 + 사용자 오프셋(내리기)
         y_pos = (header_h - text_h) / 2 + header_text_offset
         draw.text(((1080 - text_w) / 2, y_pos), title_text, font=font_title, fill=design['header_text'])
     except: pass
@@ -110,22 +110,21 @@ def create_puzzle_image(base_text, target_text, rows, cols, design, show_answer=
     bot_y = design['bot_y']
     bot_text = design['bottom_text']
     
-    # [수정됨] 줄간격(spacing) 파라미터 강제 적용
+    # [핵심 수정] 줄간격(Spacing) 적용
     line_spacing = design['bot_line_spacing']
     
     try:
-        # spacing 값을 draw.textbbox와 draw.text 모두에 전달해야 함
+        # spacing 값을 draw.textbbox와 draw.text 모두에 확실하게 전달
         bbox_b = draw.textbbox((0, 0), bot_text, font=font_bottom, spacing=line_spacing)
         text_bw = bbox_b[2] - bbox_b[0]
         
-        # align="center"와 spacing 파라미터 동시 사용
         draw.text(
             ((1080 - text_bw) / 2, bot_y), 
             bot_text, 
             font=font_bottom, 
             fill=design['bot_color'], 
             align="center", 
-            spacing=line_spacing
+            spacing=line_spacing # 줄간격 적용 파라미터
         )
     except: pass
 
@@ -157,25 +156,44 @@ def generate_youtube_metadata(base, target):
     return title, desc, tags
 
 # --- [6. 메인 UI] ---
-st.title("📏 숨은 글자 찾기 (v5.0 즉시적용)")
+st.title("🎚️ 숨은 글자 찾기 (조절바 Ver)")
 
 with st.sidebar:
-    st.header("🎨 디자인 & 배치 설정")
+    st.header("🎨 디자인 & 위치 조절")
     
-    # [즉시 수정됨] 헤더 텍스트 오프셋 기본값을 30으로 설정 (내리기)
-    with st.expander("1. 상단 헤더 & 제목 위치", expanded=True):
-        header_height = st.slider("헤더 박스 높이", 100, 400, 250)
-        title_size = st.slider("제목 글자 크기", 40, 120, 70)
-        header_text_offset = st.slider(
-            "글자 위치 이동 (위/아래)", -100, 100, 30, # <-- 기본값 30 (아래로 내림)
-            help="양수(+)면 아래로, 음수(-)면 위로 움직입니다."
-        )
-        
+    # [1] 상단 헤더 조절 바
+    with st.expander("1. 상단 제목 위치 (조절바)", expanded=True):
         col_c1, col_c2 = st.columns(2)
         header_bg = col_c1.color_picker("헤더 배경", "#111827")
         header_text = col_c2.color_picker("헤더 글자", "#F3F4F6")
+        
+        st.markdown("---")
+        header_height = st.slider("헤더 박스 높이", 100, 400, 250)
+        title_size = st.slider("제목 글자 크기", 40, 120, 70)
+        
+        # [NEW] 글자 위치 내리는 바 (기본값 30으로 설정해둠)
+        header_text_offset = st.slider(
+            "⬇️ 제목 글자 아래로 내리기", -100, 100, 30, 
+            help="오른쪽으로 당길수록 글자가 아래로 내려갑니다."
+        )
 
-    with st.expander("2. 숫자판 배치 & 간격", expanded=True):
+    # [2] 하단 문구 조절 바
+    with st.expander("2. 하단 문구 & 줄간격 (조절바)", expanded=True):
+        bottom_text = st.text_area("문구 내용", "정답을 찾으셨나요?\n댓글로 알려주세요! 👇")
+        bot_color = st.color_picker("하단 글자 색상", "#000000")
+        
+        st.markdown("---")
+        bot_size = st.slider("하단 글자 크기", 30, 150, 60)
+        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1200, 1900, 1650)
+        
+        # [NEW] 줄간격 늘리는 바 (기본값 50으로 설정해둠)
+        bot_line_spacing = st.slider(
+            "↔️ 글자 줄간격 벌리기", 0, 150, 50,
+            help="오른쪽으로 당길수록 윗줄과 아랫줄 사이가 넓어집니다."
+        )
+
+    # [3] 본문 그리드 설정
+    with st.expander("3. 숫자판 배치 (본문)", expanded=False):
         col_grid1, col_grid2 = st.columns(2)
         with col_grid1:
             rows = st.number_input("세로 줄 수", 5, 20, 10)
@@ -183,31 +201,22 @@ with st.sidebar:
             cols = st.number_input("가로 줄 수", 3, 15, 10)
             
         font_size = st.slider("숫자(글자) 크기", 30, 150, 65)
+        bg_color = st.color_picker("배경색", "#FFFFFF")
+        text_color = st.color_picker("숫자 글자색", "#000000")
+        
+        st.caption("간격/위치 조절")
         spacing_x = st.slider("가로 간격 (좌우)", 50, 200, 95)
         spacing_y = st.slider("세로 간격 (상하)", 50, 200, 100)
         grid_x = st.slider("시작 위치 X", 0, 500, 110)
         grid_y = st.slider("시작 위치 Y", 100, 1200, 350)
-        
-        bg_color = st.color_picker("배경색", "#FFFFFF")
-        text_color = st.color_picker("숫자 글자색", "#000000")
-    
-    # [즉시 수정됨] 하단 줄간격 기본값을 50으로 설정 (넓히기)
-    with st.expander("3. 하단 문구 & 줄간격", expanded=True):
-        bottom_text = st.text_area("문구 내용", "정답을 찾으셨나요?\n댓글로 알려주세요! 👇")
-        bot_size = st.slider("하단 글자 크기", 30, 150, 60)
-        bot_line_spacing = st.slider(
-            "글자 줄간격 (행간)", 0, 100, 50, # <-- 기본값 50 (넓게 벌림)
-            help="줄 사이를 넓히려면 숫자를 키우세요."
-        )
-        bot_y = st.slider("하단 문구 위치 (Y좌표)", 1200, 1900, 1650)
-        bot_color = st.color_picker("하단 글자 색상", "#000000")
 
     design = {
         'bg_color': bg_color, 'text_color': text_color, 
         'header_bg': header_bg, 'header_text': header_text, 'header_height': header_height,
-        'header_text_offset': header_text_offset,
+        'header_text_offset': header_text_offset, # 상단 위치 변수
         'font_size': font_size, 'title_size': title_size, 
-        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color, 'bot_line_spacing': bot_line_spacing,
+        'bot_size': bot_size, 'bot_y': bot_y, 'bot_color': bot_color, 
+        'bot_line_spacing': bot_line_spacing, # 하단 줄간격 변수
         'rows': rows, 'cols': cols, 'spacing_x': spacing_x, 'spacing_y': spacing_y,
         'grid_x': grid_x, 'grid_y': grid_y, 'bottom_text': bottom_text
     }
