@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숫자 퀴즈 생성기 (대본수정)", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="숫자 퀴즈 생성기 (헤더조절)", page_icon="🎯", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -51,7 +51,8 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
     font_main = get_font(d['main_size'])
     font_bot = get_font(d['bot_size'])
 
-    # [섹션 1: 상단 헤더]
+    # [섹션 1: 상단 헤더 박스]
+    # 사용자가 설정한 높이(d['header_height'])만큼만 그립니다.
     draw.rectangle([(0, 0), (1080, d['header_height'])], fill=d['header_bg'])
     
     h1_text = d['h1_text']
@@ -104,40 +105,42 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
 
     return canvas
 
-# --- [5. 유튜브 메타데이터 생성 (수정됨)] ---
+# --- [5. 메타데이터 생성] ---
 def generate_metadata(base, target):
     title = f"3초 안에 숫자 '{target}' 찾기 도전! ⏱️ #shorts"
-    
-    # [요청하신 대본 내용으로 정확히 수정]
     desc = f"3초안에 숫자 [{target}]를 찾으면 정답을 톡톡 두번 터치해주세요\n\n#두뇌퀴즈 #시력테스트 #shorts"
-    
     tags = f"두뇌퀴즈, 시력테스트, 집중력, 치매예방, 숫자퀴즈, {base}, {target}, 뇌훈련, shorts"
     return title, desc, tags
 
 # --- [6. 메인 컨트롤 패널 (UI)] ---
-st.title("🎯 숫자 퀴즈 생성기 (대본 수정완료)")
+st.title("🎯 숫자 퀴즈 생성기 (헤더 자유조절)")
 
 # === [사이드바 컨트롤] ===
 with st.sidebar:
     st.header("🎚️ 디자인 설정 패널")
     
     # 1. 상단 헤더
-    with st.expander("1. 상단 제목 (2줄 설정)", expanded=True):
+    with st.expander("1. 상단 제목 (박스 두께 조절)", expanded=True):
         st.markdown("### 🟦 헤더 박스")
-        header_height = st.slider("헤더 높이", 100, 600, 350)
+        
+        # [수정됨] 최소값을 50으로 낮추고, 기본값을 200으로 설정해 더 얇게 시작
+        header_height = st.slider(
+            "헤더 박스 높이 (두께)", 
+            50, 600, 200, 
+            help="왼쪽으로 당기면 띠가 얇아집니다."
+        )
         header_bg = st.color_picker("헤더 배경색", "#112D4E")
         
         st.markdown("### 📝 첫 번째 줄 (큰 제목)")
         h1_text = st.text_input("내용 1", "숫자 찾기 도전")
-        h1_size = st.slider("글자 크기 1", 40, 150, 90)
-        h1_y = st.slider("위치 Y (1)", 10, 300, 50)
+        h1_size = st.slider("글자 크기 1", 30, 150, 70)
+        h1_y = st.slider("위치 Y (1)", 10, 300, 40)
         h1_color = st.color_picker("글자 색 1", "#FFFFFF")
         
-        st.markdown("### 📝 두 번째 줄 (노란색 강조)")
+        st.markdown("### 📝 두 번째 줄 (강조 제목)")
         h2_text = st.text_input("내용 2", "3초 안에 숫자 '{target}' 찾기")
-        st.caption("'{target}'은 찾는 숫자로 자동 변환됩니다.")
-        h2_size = st.slider("글자 크기 2", 40, 150, 80)
-        h2_y = st.slider("위치 Y (2)", 50, 500, 180)
+        h2_size = st.slider("글자 크기 2", 30, 150, 80)
+        h2_y = st.slider("위치 Y (2)", 10, 500, 130)
         h2_color = st.color_picker("글자 색 2", "#FFC300")
 
     # 2. 중앙 그리드
@@ -154,7 +157,7 @@ with st.sidebar:
         spacing_x = st.slider("가로 간격 (↔️)", 50, 250, 140)
         spacing_y = st.slider("세로 간격 (↕️)", 50, 250, 120)
         grid_start_x = st.slider("시작점 X", 0, 500, 180)
-        grid_start_y = st.slider("시작점 Y", 200, 1500, 450)
+        grid_start_y = st.slider("시작점 Y", 200, 1500, 400)
 
     # 3. 하단 문구
     with st.expander("3. 하단 문구 설정", expanded=True):
@@ -211,8 +214,7 @@ with c2:
             st.download_button("💾 정답 다운로드", buf.getvalue(), "answer.jpg", "image/jpeg", use_container_width=True)
             
         st.divider()
-        # [수정됨] 변경된 메타데이터 생성 함수 호출
         t, d, tags = generate_metadata(base_text, target_text)
         st.text_input("유튜브 제목", t)
-        st.text_area("설명란 (대본)", d, height=150) # 높이 조절
+        st.text_area("설명란 (대본)", d, height=150)
         st.text_area("태그", tags)
