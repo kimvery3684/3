@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="퀴즈 생성기 (글자/간격 조절)", page_icon="🎚️", layout="wide")
+st.set_page_config(page_title="숫자 퀴즈 마스터", page_icon="🎛️", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -51,20 +51,20 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
     font_main = get_font(d['main_size'])
     font_bot = get_font(d['bot_size'])
 
-    # [섹션 1: 상단 헤더 박스]
+    # === [상단 헤더 영역] ===
+    # 1. 배경 박스 (높이 조절 반영)
     draw.rectangle([(0, 0), (1080, d['header_height'])], fill=d['header_bg'])
     
-    # 제목 1 (큰 제목)
+    # 2. 제목 1 (큰 제목)
     h1_text = d['h1_text']
     try:
-        # spacing 파라미터 적용 (줄간격)
         bbox1 = draw.textbbox((0, 0), h1_text, font=font_h1, spacing=d['h1_spacing'])
         w1 = bbox1[2] - bbox1[0]
-        # align='center'와 spacing 적용
+        # 중앙 정렬 + 줄간격(spacing) 적용
         draw.text(((1080 - w1) / 2, d['h1_y']), h1_text, font=font_h1, fill=d['h1_color'], align="center", spacing=d['h1_spacing'])
     except: pass
 
-    # 제목 2 (작은 제목)
+    # 3. 제목 2 (작은 제목 - 자동 치환)
     h2_text = d['h2_text'].replace("{target}", target).replace("{base}", base)
     try:
         bbox2 = draw.textbbox((0, 0), h2_text, font=font_h2, spacing=d['h2_spacing'])
@@ -72,7 +72,7 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
         draw.text(((1080 - w2) / 2, d['h2_y']), h2_text, font=font_h2, fill=d['h2_color'], align="center", spacing=d['h2_spacing'])
     except: pass
 
-    # [섹션 2: 중앙 숫자 그리드]
+    # === [중앙 숫자 그리드] ===
     if 'answer_pos' not in st.session_state:
         st.session_state.answer_pos = (random.randint(0, rows-1), random.randint(0, cols-1))
     ans_r, ans_c = st.session_state.answer_pos
@@ -91,18 +91,20 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
                 box_s = d['main_size'] * 0.75
                 draw.rectangle([x - box_s, y - box_s, x + box_s, y + box_s], outline="#FF0000", width=10)
 
-    # [섹션 3: 하단 문구]
+    # === [하단 문구 영역] ===
     bot_text = d['bot_text']
     try:
         bbox_b = draw.textbbox((0, 0), bot_text, font=font_bot, spacing=d['bot_spacing'])
         wb = bbox_b[2] - bbox_b[0]
+        
+        # 하단 위치(bot_y)에 그려줌
         draw.text(
             ((1080 - wb) / 2, d['bot_y']), 
             bot_text, 
             font=font_bot, 
             fill=d['bot_color'], 
             align="center", 
-            spacing=d['bot_spacing']
+            spacing=d['bot_spacing']  # 여기가 핵심 (줄간격)
         )
     except: pass
 
@@ -110,10 +112,11 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
 
 # --- [5. 헤더 미리보기 함수] ---
 def create_header_preview(d):
-    preview_h = 600
-    canvas = Image.new('RGB', (1080, preview_h), "#CCCCCC")
+    preview_h = 500
+    canvas = Image.new('RGB', (1080, preview_h), "#EEEEEE")
     draw = ImageDraw.Draw(canvas)
     
+    # 헤더 박스
     draw.rectangle([(0, 0), (1080, d['header_height'])], fill=d['header_bg'])
     
     font_h1 = get_font(d['h1_size'])
@@ -141,68 +144,83 @@ def generate_metadata(base, target):
     return title, desc, tags
 
 # --- [7. 메인 컨트롤 패널 (UI)] ---
-st.title("🎚️ 글자 크기/간격 정밀 조절기 (v10.0)")
+st.title("🎛️ 숫자 퀴즈 마스터 (HTML 기능 이식판)")
 
-# === [사이드바 컨트롤] ===
+# === [사이드바 컨트롤: HTML 구조 반영] ===
 with st.sidebar:
-    st.header("🎨 디자인 설정")
+    st.header("⚙️ 디자인 제어 패널")
     
-    # 1. 상단 헤더 설정 (글자 크기 & 간격 추가)
-    with st.expander("1. 상단(헤더) 글자 & 간격", expanded=True):
-        st.markdown("### 🟦 헤더 배경")
-        header_height = st.slider("헤더 높이", 50, 600, 200)
-        header_bg = st.color_picker("헤더 배경색", "#112D4E")
+    # [1] 상단바 디자인 (HTML의 '상단 높이/글자/줄간격' 반영)
+    with st.expander("1. ⬆️ 상단바 디자인", expanded=True):
+        st.caption("HTML 코드의 '상단 높이 / 글자크기 / 줄간격' 기능입니다.")
+        
+        # 높이 조절
+        header_height = st.slider("상단 높이 (Box Height)", 50, 600, 200)
         
         st.markdown("---")
-        st.markdown("### 📝 제목 1 (큰 글씨)")
+        # 제목 1 (큰 글씨)
         h1_text = st.text_input("제목 1 내용", "숫자 찾기 도전")
-        col_h1_1, col_h1_2 = st.columns(2)
-        h1_size = col_h1_1.slider("크기(Size) 1", 30, 150, 60)
-        h1_spacing = col_h1_2.slider("줄간격 1", 0, 100, 20, help="여러 줄일 때 줄 사이 간격")
-        h1_y = st.slider("위치 Y (1)", 0, 300, 30)
-        h1_color = st.color_picker("글자 색 1", "#FFFFFF")
+        col1_1, col1_2 = st.columns(2)
+        h1_size = col1_1.slider("글자크기 1", 30, 150, 70)
+        h1_spacing = col1_2.slider("줄간격 1", 0, 100, 20)
+        h1_y = st.slider("위치 Y (1)", 0, 400, 40)
         
         st.markdown("---")
-        st.markdown("### 📝 제목 2 (작은 글씨)")
+        # 제목 2 (작은 글씨)
         h2_text = st.text_input("제목 2 내용", "3초 안에 숫자 '{target}' 찾기")
-        col_h2_1, col_h2_2 = st.columns(2)
-        h2_size = col_h2_1.slider("크기(Size) 2", 30, 150, 80)
-        h2_spacing = col_h2_2.slider("줄간격 2", 0, 100, 20)
-        h2_y = st.slider("위치 Y (2)", 0, 500, 110)
-        h2_color = st.color_picker("글자 색 2", "#FFC300")
+        col2_1, col2_2 = st.columns(2)
+        h2_size = col2_1.slider("글자크기 2", 30, 150, 80)
+        h2_spacing = col2_2.slider("줄간격 2", 0, 100, 20)
+        h2_y = st.slider("위치 Y (2)", 0, 500, 130)
+        
+        st.markdown("---")
+        # 색상
+        col_c1, col_c2, col_c3 = st.columns(3)
+        header_bg = col_c1.color_picker("배경색", "#112D4E")
+        h1_color = col_c2.color_picker("제목1 색", "#FFFFFF")
+        h2_color = col_c3.color_picker("제목2 색", "#FFC300")
         
         # 미리보기
-        st.markdown("👇 **헤더 미리보기**")
         preview_design = {
             'header_height': header_height, 'header_bg': header_bg,
             'h1_text': h1_text, 'h1_size': h1_size, 'h1_spacing': h1_spacing, 'h1_y': h1_y, 'h1_color': h1_color,
             'h2_text': h2_text, 'h2_size': h2_size, 'h2_spacing': h2_spacing, 'h2_y': h2_y, 'h2_color': h2_color,
         }
-        st.image(create_header_preview(preview_design), use_container_width=True)
+        st.image(create_header_preview(preview_design), caption="상단바 실시간 미리보기", use_container_width=True)
 
-    # 2. 중앙 그리드
-    with st.expander("2. 중앙 숫자판 설정", expanded=False):
+    # [2] 하단바 디자인 (HTML의 '하단 높이/글자/줄간격' 반영)
+    with st.expander("2. ⬇️ 하단바 디자인", expanded=True):
+        st.caption("HTML 코드의 '하단 높이 / 글자크기 / 줄간격' 기능입니다.")
+        
+        bot_text = st.text_area("하단 문구 입력", "정답은 댓글에서 확인하세요!\n구독과 좋아요는 사랑입니다 ❤️")
+        
+        # 높이 조절 개념은 '위치 Y'로 구현됨 (파이썬에서는 캔버스 좌표계이므로)
+        bot_y = st.slider("하단 위치 Y (높이 조절)", 1200, 1850, 1650, help="숫자가 클수록 아래로 내려갑니다.")
+        
+        col_b1, col_b2 = st.columns(2)
+        bot_size = col_b1.slider("하단 글자크기", 20, 100, 50)
+        bot_spacing = col_b2.slider("하단 줄간격", 0, 100, 30, help="HTML의 line-height 역할")
+        
+        bot_color = st.color_picker("하단 글자색", "#000000")
+
+    # [3] 중앙 숫자판 (기존 기능 유지)
+    with st.expander("3. 중앙 숫자판 설정", expanded=False):
         col_r, col_c = st.columns(2)
         rows = col_r.number_input("세로 줄 수", 5, 20, 10)
         cols = col_c.number_input("가로 줄 수", 3, 15, 6)
+        
         main_size = st.slider("숫자 크기", 30, 150, 80)
         main_color = st.color_picker("숫자 색상", "#000000")
+        
+        st.caption("간격/위치 미세조정")
         spacing_x = st.slider("가로 간격", 50, 250, 140)
         spacing_y = st.slider("세로 간격", 50, 250, 120)
         grid_start_x = st.slider("시작점 X", 0, 500, 180)
         grid_start_y = st.slider("시작점 Y", 200, 1500, 400)
-
-    # 3. 하단 문구 설정 (글자 크기 & 간격 추가)
-    with st.expander("3. 하단 문구 글자 & 간격", expanded=True):
-        bot_text = st.text_area("하단 내용", "정답은 댓글에서 확인하세요!\n구독과 좋아요는 사랑입니다 ❤️")
-        col_b1, col_b2 = st.columns(2)
-        bot_size = col_b1.slider("하단 크기(Size)", 30, 100, 50)
-        bot_spacing = col_b2.slider("하단 줄간격", 0, 100, 20, help="윗줄과 아랫줄 사이를 넓혀줍니다.")
-        bot_y = st.slider("하단 위치 Y", 1000, 1900, 1650)
-        bot_color = st.color_picker("하단 글자 색", "#000000")
         
     bg_color = st.color_picker("전체 배경색", "#FFFFFF")
 
+    # 디자인 딕셔너리 패킹
     design = {
         'bg_color': bg_color, 'header_height': header_height, 'header_bg': header_bg,
         'h1_text': h1_text, 'h1_size': h1_size, 'h1_spacing': h1_spacing, 'h1_y': h1_y, 'h1_color': h1_color,
