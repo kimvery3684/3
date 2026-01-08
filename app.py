@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 
 # --- [1. 기본 설정] ---
-st.set_page_config(page_title="숫자 퀴즈 생성기 (헤더조절)", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="숫자 퀴즈 생성기 (헤더조절)", page_icon="📏", layout="wide")
 
 FONT_FILE = "NanumGothic-ExtraBold.ttf"
 
@@ -31,7 +31,7 @@ def check_password():
 
 if not check_password(): st.stop()
 
-# --- [3. 폰트 로드 (안전장치)] ---
+# --- [3. 폰트 로드] ---
 def get_font(size):
     if os.path.exists(FONT_FILE):
         return ImageFont.truetype(FONT_FILE, size)
@@ -55,6 +55,7 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
     # 사용자가 설정한 높이(d['header_height'])만큼만 그립니다.
     draw.rectangle([(0, 0), (1080, d['header_height'])], fill=d['header_bg'])
     
+    # 제목 1
     h1_text = d['h1_text']
     try:
         bbox1 = draw.textbbox((0, 0), h1_text, font=font_h1)
@@ -62,6 +63,7 @@ def create_puzzle_image(base, target, rows, cols, d, show_answer=False):
         draw.text(((1080 - w1) / 2, d['h1_y']), h1_text, font=font_h1, fill=d['h1_color'])
     except: pass
 
+    # 제목 2
     h2_text = d['h2_text'].replace("{target}", target).replace("{base}", base)
     try:
         bbox2 = draw.textbbox((0, 0), h2_text, font=font_h2)
@@ -113,35 +115,36 @@ def generate_metadata(base, target):
     return title, desc, tags
 
 # --- [6. 메인 컨트롤 패널 (UI)] ---
-st.title("🎯 숫자 퀴즈 생성기 (헤더 자유조절)")
+st.title("🎯 숫자 퀴즈 생성기 (헤더크기 조절)")
 
 # === [사이드바 컨트롤] ===
 with st.sidebar:
     st.header("🎚️ 디자인 설정 패널")
     
     # 1. 상단 헤더
-    with st.expander("1. 상단 제목 (박스 두께 조절)", expanded=True):
-        st.markdown("### 🟦 헤더 박스")
+    with st.expander("1. 상단 제목 & 헤더 크기", expanded=True):
+        st.markdown("### 🟦 헤더 박스 크기 조절")
         
-        # [수정됨] 최소값을 50으로 낮추고, 기본값을 200으로 설정해 더 얇게 시작
+        # [핵심] 헤더 높이 조절 슬라이더
         header_height = st.slider(
-            "헤더 박스 높이 (두께)", 
-            50, 600, 200, 
-            help="왼쪽으로 당기면 띠가 얇아집니다."
+            "↕️ 파란 띠 두께 (높이)", 
+            50, 600, 180,  # 최소 50, 최대 600, 기본값 180 (얇게)
+            help="숫자를 줄이면 띠가 얇아지고, 늘리면 두꺼워집니다."
         )
         header_bg = st.color_picker("헤더 배경색", "#112D4E")
         
-        st.markdown("### 📝 첫 번째 줄 (큰 제목)")
-        h1_text = st.text_input("내용 1", "숫자 찾기 도전")
-        h1_size = st.slider("글자 크기 1", 30, 150, 70)
-        h1_y = st.slider("위치 Y (1)", 10, 300, 40)
-        h1_color = st.color_picker("글자 색 1", "#FFFFFF")
+        st.divider()
+        st.markdown("### 📝 제목 글자 위치")
+        h1_text = st.text_input("큰 제목", "숫자 찾기 도전")
+        h1_size = st.slider("큰 제목 크기", 30, 150, 60)
+        h1_y = st.slider("큰 제목 위치 Y", 0, 300, 30)
+        h1_color = st.color_picker("큰 제목 색", "#FFFFFF")
         
-        st.markdown("### 📝 두 번째 줄 (강조 제목)")
-        h2_text = st.text_input("내용 2", "3초 안에 숫자 '{target}' 찾기")
-        h2_size = st.slider("글자 크기 2", 30, 150, 80)
-        h2_y = st.slider("위치 Y (2)", 10, 500, 130)
-        h2_color = st.color_picker("글자 색 2", "#FFC300")
+        st.markdown("---")
+        h2_text = st.text_input("작은 제목", "3초 안에 숫자 '{target}' 찾기")
+        h2_size = st.slider("작은 제목 크기", 30, 150, 70)
+        h2_y = st.slider("작은 제목 위치 Y", 0, 500, 100)
+        h2_color = st.color_picker("작은 제목 색", "#FFC300")
 
     # 2. 중앙 그리드
     with st.expander("2. 숫자판 배치 & 간격", expanded=True):
@@ -153,7 +156,6 @@ with st.sidebar:
         main_size = st.slider("숫자 크기", 30, 150, 80)
         main_color = st.color_picker("숫자 색상", "#000000")
         
-        st.markdown("### 📏 간격 및 위치")
         spacing_x = st.slider("가로 간격 (↔️)", 50, 250, 140)
         spacing_y = st.slider("세로 간격 (↕️)", 50, 250, 120)
         grid_start_x = st.slider("시작점 X", 0, 500, 180)
