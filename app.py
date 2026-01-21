@@ -26,9 +26,9 @@ def get_font(size):
     else: return ImageFont.load_default()
 
 def create_puzzle_image(params):
-    # 캔버스 생성 (기본 1080 x 1350, 혹은 조절 가능)
+    # 캔버스 생성 (기본 1080 x 1350)
     W, H = 1080, 1350 
-    img = Image.new('RGB', (W, H), "#FFFFFF") # 전체 배경 흰색 고정 (필요시 변경)
+    img = Image.new('RGB', (W, H), "#FFFFFF") # 전체 배경 흰색
     draw = ImageDraw.Draw(img)
     
     # 1. 헤더 배경 그리기
@@ -72,16 +72,8 @@ def create_puzzle_image(params):
             color = params['grid_color']
             if params['is_answer_mode'] and is_target:
                 color = "#FF0000" # 빨강
-                # 동그라미 (옵션)
-                # bounds = [x-40, y-40, x+40, y+40]
-                # draw.ellipse(bounds, outline="red", width=5)
 
-            # anchor="lt" (Left Top) 기준이면 좌표 잡기가 편함. 
-            # 하지만 중앙 정렬을 위해 보통 anchor="mm" 등을 씀. 
-            # 여기서는 사장님 설정값(X=79)이 좌측 시작점 같으니 anchor="lt"나 "mm" 중 조절 필요.
-            # Start X가 79면 꽤 왼쪽이므로, 글자의 왼쪽 위(lt) 기준일 확률이 높음.
-            # 혹은 Start X가 첫 글자의 중심점일 수도 있음. 일단 'mm'(중앙)으로 잡고 테스트.
-            
+            # anchor="mm" (중앙 정렬) 사용
             draw.text((x, y), char, font=font_grid, fill=color, anchor="mm")
             
     return img
@@ -97,16 +89,16 @@ with col_L:
         st.write("🟦 **헤더 배경**")
         # [사진값] 헤더 높이: 310
         header_h = st.slider("헤더 높이", 100, 600, 310) 
-        header_bg = st.color_picker("헤더 배경색", "#1E2A47") # 짙은 남색 추정
+        header_bg = st.color_picker("헤더 배경색", "#1E2A47") # 짙은 남색
         
         st.markdown("---")
         st.write("📝 **제목 1 (큰 글씨)**")
         t1_text = st.text_input("제목 1 내용", "숫자 찾기 도전")
         
         c1, c2 = st.columns(2)
-        # [사진값] 크기: 60, Y: 90
+        # [사진값] 크기: 60, Y: 149
         with c1: t1_size = st.slider("크기(Size) 1", 10, 200, 60)
-        with c2: t1_y = st.slider("위치 Y(1)", 0, 500, 90)
+        with c2: t1_y = st.slider("위치 Y(1)", 0, 500, 149)
         t1_color = st.color_picker("글자색 1", "#FFFFFF")
 
         st.markdown("---")
@@ -114,9 +106,9 @@ with col_L:
         t2_text = st.text_input("제목 2 내용", "3초 안에 숫자 '{target}' 찾기")
         
         c3, c4 = st.columns(2)
-        # [사진값] 크기: 80, Y: 180
+        # [사진값] 크기: 80, Y: 214
         with c3: t2_size = st.slider("크기(Size) 2", 10, 200, 80)
-        with c4: t2_y = st.slider("위치 Y(2)", 0, 500, 180)
+        with c4: t2_y = st.slider("위치 Y(2)", 0, 500, 214)
         t2_color = st.color_picker("글자색 2", "#FFD700") # 노란색
 
     # --- 2. 중앙 숫자판 설정 ---
@@ -126,20 +118,20 @@ with col_L:
         with c_row: rows = st.number_input("세로 줄 수", 5, 20, 10)
         with c_col: cols = st.number_input("가로 줄 수", 5, 20, 10)
         
-        # [사진값] 숫자 크기: 70
-        grid_size = st.slider("숫자 크기", 10, 200, 70)
+        # [사진값] 숫자 크기: 51
+        grid_size = st.slider("숫자 크기", 10, 200, 51)
         grid_color = st.color_picker("숫자 색상", "#000000")
         
         st.markdown("---")
         st.write("📏 **간격 및 시작점 (정밀)**")
         
-        # [사진값] 가로간격: 100, 세로간격: 100
+        # [사진값] 가로간격: 100, 세로간격: 80
         x_spacing = st.slider("가로 간격 (X Spacing)", 10, 200, 100)
-        y_spacing = st.slider("세로 간격 (Y Spacing)", 10, 200, 100)
+        y_spacing = st.slider("세로 간격 (Y Spacing)", 10, 200, 80)
         
-        # [사진값] 시작점X: 79, 시작점Y: 400
-        start_x = st.slider("시작점 X (첫 글자 위치)", 0, 500, 79)
-        start_y = st.slider("시작점 Y (첫 글자 위치)", 0, 800, 400)
+        # [사진값] 시작점X: 83, 시작점Y: 379
+        start_x = st.slider("시작점 X (첫 글자 위치)", 0, 500, 83)
+        start_y = st.slider("시작점 Y (첫 글자 위치)", 0, 800, 379)
 
 with col_R:
     st.header("📝 문제 입력 & 확인")
